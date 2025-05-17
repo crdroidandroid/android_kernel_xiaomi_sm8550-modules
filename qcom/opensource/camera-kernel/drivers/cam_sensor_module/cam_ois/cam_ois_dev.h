@@ -123,7 +123,9 @@ struct cam_ois_ctrl_t {
 	uint8_t ois_fw_flag;
 	uint8_t is_ois_calib;
 	struct cam_ois_opcode opcode;
+	/* xiaomi add for cci debug start */
 	void *cci_debug;
+	/* xiaomi add for cci debug end */
 };
 
 /**

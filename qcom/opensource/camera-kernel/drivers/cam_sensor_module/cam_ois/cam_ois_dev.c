@@ -11,7 +11,9 @@
 #include "cam_debug_util.h"
 #include "camera_main.h"
 #include "cam_compat.h"
+/* xiaomi add for cci debug start */
 #include "cam_cci_debug_util.h"
+/* xiaomi add for cci debug end */
 
 static struct cam_i3c_ois_data {
 	struct cam_ois_ctrl_t                       *o_ctrl;
@@ -397,6 +399,7 @@ static int cam_ois_component_bind(struct device *dev,
 
 	CAM_DBG(CAM_OIS, "Component bound successfully");
 
+	/* xiaomi add for cci debug start */
 	rc = cam_cci_dev_create_debugfs_entry(o_ctrl->device_name,
 		o_ctrl->soc_info.index, CAM_OIS_NAME,
 		&o_ctrl->io_master_info, o_ctrl->cci_i2c_master,
@@ -405,6 +408,7 @@ static int cam_ois_component_bind(struct device *dev,
 		CAM_WARN(CAM_OIS, "debugfs creation failed");
 		rc = 0;
 	}
+	/* xiaomi add for cci debug end */
 
 	return rc;
 unreg_subdev:
@@ -448,7 +452,9 @@ static void cam_ois_component_unbind(struct device *dev,
 	cam_ois_shutdown(o_ctrl);
 	mutex_unlock(&(o_ctrl->ois_mutex));
 	cam_unregister_subdev(&(o_ctrl->v4l2_dev_str));
+	/* xiaomi add for cci debug start */
 	cam_cci_dev_remove_debugfs_entry((void *)o_ctrl->cci_debug);
+	/* xiaomi add for cci debug end */
 
 	soc_private =
 		(struct cam_ois_soc_private *)o_ctrl->soc_info.soc_private;

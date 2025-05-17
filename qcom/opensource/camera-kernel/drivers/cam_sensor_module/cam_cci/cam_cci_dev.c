@@ -9,7 +9,9 @@
 #include "cam_cci_soc.h"
 #include "cam_cci_core.h"
 #include "camera_main.h"
+/* xiaomi add for cci debug start */
 #include "cam_cci_debug_util.h"
+/* xiaomi add for cci debug end */
 
 #define CCI_MAX_DELAY 1000000
 
@@ -430,7 +432,9 @@ static int cam_cci_create_debugfs_entry(struct cci_device *cci_dev)
 	int rc = 0, idx;
 	struct dentry *dbgfileptr = NULL;
 	static char * const filename[] = { "en_dump_cci0", "en_dump_cci1", "en_dump_cci2"};
+	/* xiaomi add for cci debug start */
 	char debugfs_name[DEBUGFS_NAME_MAX_SIZE];
+	/* xiaomi add for cci debug end */
 
 	if (!cam_debugfs_available())
 		return 0;
@@ -452,6 +456,7 @@ static int cam_cci_create_debugfs_entry(struct cci_device *cci_dev)
 
 	debugfs_create_file(filename[idx], 0644, debugfs_root, cci_dev, &cam_cci_debug);
 
+	/* xiaomi modified for cci debug */
 	snprintf(debugfs_name, DEBUGFS_NAME_MAX_SIZE, "cci%d",
 		cci_dev->soc_info.index);
 	dbgfileptr = debugfs_create_dir(debugfs_name, debugfs_root);
@@ -460,6 +465,7 @@ static int cam_cci_create_debugfs_entry(struct cci_device *cci_dev)
 		rc = -ENOENT;
 		return 0;
 	}
+	/* xiaomi modified for cci debug */
 
 	return 0;
 }
