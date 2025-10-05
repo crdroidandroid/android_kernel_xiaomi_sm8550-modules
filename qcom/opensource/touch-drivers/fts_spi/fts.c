@@ -5620,6 +5620,10 @@ static int fts_get_mode_value(void *private, enum touch_mode mode)
 		return fts_info->fod_longpress_gesture_enabled;
 	case TOUCH_MODE_NONUI_MODE:
 		return fts_info->nonui_status;
+	case TOUCH_MODE_REPORT_RATE:
+		return fts_info->reprot_rate;
+	case TOUCH_MODE_ORIENTATION:
+		return fts_info->orientation;
 	default:
 		logError(1, "handler got mode %d, not implemented", mode);
 		return -EINVAL;
