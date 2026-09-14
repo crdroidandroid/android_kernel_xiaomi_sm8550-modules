@@ -305,67 +305,6 @@ int brl_suspend(struct goodix_ts_core *cd)
 	return 0;
 }
 
-#define GOODIX_BRLD_CMD_RAWDATA 0x90
-#define GOODIX_BRLD_CMD_COORD 0x91
-int brl_set_coor_mode(struct goodix_ts_core *cd) {
-	struct goodix_ts_cmd cmd;
-	int ret = 0;
-
-	if (cd->bus->ic_type != IC_TYPE_BERLIN_D)
-		return ret;
-
-	ts_debug("brld_set_coor_mode, init_stage: %d", cd->init_stage);
-
-	if (cd->init_stage < CORE_INIT_STAGE2)
-		goto exit;
-
-	// Disable rawdata mode
-	cmd.cmd = GOODIX_BRLD_CMD_RAWDATA;
-	cmd.data[0] = 0;
-	cmd.len = 5;
-	ret = cd->hw_ops->send_cmd(cd, &cmd);
-	if (ret < 0) {
-		ts_err("could not disable rawdata mode, err %d", ret);
-		goto exit;
-	}
-
-	// Enable coor mode
-	cmd.cmd = GOODIX_BRLD_CMD_COORD;
-	cmd.data[0] = 0x81;
-	cmd.len = 5;
-	ret = cd->hw_ops->send_cmd(cd, &cmd);
-	if (ret < 0) {
-		ts_err("could not enable coor mode, err: %d", ret);
-		goto exit;
-	}
-
-	ts_debug("successfully enabled coor mode");
-
-exit:
-	return ret;
-}
-
-#define GOODIX_HIGH_RATE_CMD 0xC0
-static int brl_switch_report_rate(struct goodix_ts_core *cd, bool high)
-{
-	struct goodix_ts_cmd cmd;
-	int ret = 0;
-
-	cmd.cmd = GOODIX_HIGH_RATE_CMD;
-	cmd.len = 5;
-	cmd.data[0] = high;
-	ret = cd->hw_ops->send_cmd(cd, &cmd);
-	if (ret < 0) {
-		ts_err("failed to send report rate cmd, high = %d", high);
-		goto exit;
-	}
-	ts_info("report rate switch: %s", high ? "480HZ" : "240HZ");
-	cd->high_report_rate = high;
-
-exit:
-	return ret;
-}
-
 int brl_resume(struct goodix_ts_core *cd)
 {
 	int ret = 0;
@@ -388,21 +327,17 @@ int brl_resume(struct goodix_ts_core *cd)
 int brl_gesture(struct goodix_ts_core *cd, int gesture_type)
 {
 	struct goodix_ts_cmd cmd;
-	int ret = 0;
 
 	if (cd->bus->ic_type == IC_TYPE_BERLIN_A)
 		cmd.cmd = GOODIX_GESTURE_CMD_BA;
 	else
 		cmd.cmd = GOODIX_GESTURE_CMD;
-	cmd.len = 6;
-	cmd.data[0] = (gesture_type >> 0) & 0x01;
-	cmd.data[1] = (gesture_type >> 1) & 0x01;
-
-	ret = cd->hw_ops->send_cmd(cd, &cmd);
-	if (ret)
+	cmd.len = 5;
+	cmd.data[0] = gesture_type;
+	if (cd->hw_ops->send_cmd(cd, &cmd))
 		ts_err("failed send gesture cmd");
 
-	return ret;
+	return 0;
 }
 
 static int brl_reset(struct goodix_ts_core *cd, int delay)
@@ -814,7 +749,6 @@ static int convert_ic_info(struct goodix_ic_info *info, const u8 *data)
 	struct goodix_ic_info_feature *feature = &info->feature;
 	struct goodix_ic_info_param *parm = &info->parm;
 	struct goodix_ic_info_misc *misc = &info->misc;
-	struct goodix_ic_info_other *other = &info->other;
 
 	info->length = le16_to_cpup((__le16 *)data);
 
@@ -932,9 +866,6 @@ static int convert_ic_info(struct goodix_ic_info *info, const u8 *data)
 	LE16_TO_CPU(misc->stylus_rawdata_len);
 	LE32_TO_CPU(misc->noise_data_addr);
 	LE32_TO_CPU(misc->esd_addr);
-
-	data += sizeof(*misc);
-	memcpy((u8 *)other, data, sizeof(*other));
 
 	return 0;
 }
@@ -1587,8 +1518,6 @@ static struct goodix_ts_hw_ops brl_hw_ops = {
 	.event_handler = brl_event_handler,
 	.after_event_handler = brl_after_event_handler,
 	.get_capacitance_data = brl_get_capacitance_data,
-	.set_coor_mode = brl_set_coor_mode,
-	.switch_report_rate = brl_switch_report_rate,
 };
 
 struct goodix_ts_hw_ops *goodix_get_hw_ops(void)

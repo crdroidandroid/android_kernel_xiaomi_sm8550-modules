@@ -43,8 +43,6 @@
 #include <linux/spi/spi.h>
 #include "../qts/qts_core_common.h"
 
-#include "../xiaomi/xiaomi_touch.h"
-
 #define GOODIX_CORE_DRIVER_NAME			"goodix_ts"
 #define GOODIX_PEN_DRIVER_NAME			"goodix_ts,pen"
 #define GOODIX_CORE_DEVICE_NAME			"goodix_ts"
@@ -61,7 +59,6 @@
 #define GOODIX_GESTURE_DATA_LEN			16
 
 #define GOODIX_NORMAL_RESET_DELAY_MS	100
-#define GOODIX_NORMAL_GESTURE_DELAY_MS 300
 #define GOODIX_HOLD_CPU_RESET_DELAY_MS  5
 
 #define GOODIX_RETRY_3					3
@@ -70,8 +67,6 @@
 
 #define TS_DEFAULT_FIRMWARE				"goodix_firmware.bin"
 #define TS_DEFAULT_CFG_BIN				"goodix_cfg_group.bin"
-
-#define GOODIX_SUSPEND_GESTURE_ENABLE
 
 enum GOODIX_GESTURE_TYP {
 	GESTURE_SINGLE_TAP = (1 << 0),
@@ -238,18 +233,6 @@ struct goodix_ic_info_misc { /* other data */
 	u16 stylus_rawdata_len;
 	u32 noise_data_addr;
 	u32 esd_addr;
-	u32 auto_scan_cmd_addr;
-	u32 auto_scan_info_addr;
-};
-
-struct goodix_ic_info_other {
-	u16 normalize_k_version;
-	u32 irrigation_data_addr;
-	u32 algo_debug_data_addr;
-	u16 algo_debug_data_len;
-	u32 update_sync_data_addr;
-	u16 screen_max_x;
-	u16 screen_max_y;
 };
 
 struct goodix_ic_info {
@@ -258,7 +241,6 @@ struct goodix_ic_info {
 	struct goodix_ic_info_feature feature;
 	struct goodix_ic_info_param parm;
 	struct goodix_ic_info_misc misc;
-	struct goodix_ic_info_other other;
 };
 #pragma pack()
 
@@ -302,7 +284,6 @@ struct goodix_module {
  * @invert_xy: invert x and y for inversely mounted IC
  * @pannel_key_map: key map
  * @fw_name: name of the firmware image
- * @support_thp_fw: whether it is required to disable host touch processing and enable coord mode
  */
 struct goodix_ts_board_data {
 	char avdd_name[GOODIX_MAX_STR_LABLE_LEN];
@@ -323,8 +304,6 @@ struct goodix_ts_board_data {
 	bool pen_enable;
 	char fw_name[GOODIX_MAX_STR_LABLE_LEN];
 	char cfg_bin_name[GOODIX_MAX_STR_LABLE_LEN];
-
-	bool support_thp_fw;
 };
 
 enum goodix_fw_update_mode {
@@ -475,8 +454,6 @@ struct goodix_ts_hw_ops {
 	int (*after_event_handler)(struct goodix_ts_core *cd);
 	int (*get_capacitance_data)(struct goodix_ts_core *cd,
 			struct ts_rawdata_info *info);
-	int (*set_coor_mode)(struct goodix_ts_core *cd);
-	int (*switch_report_rate)(struct goodix_ts_core *cd, bool high);
 };
 
 /*
@@ -561,18 +538,6 @@ struct goodix_ts_core {
 #endif
 	bool qts_en;
 	struct mutex tui_transition_lock;
-
-	struct workqueue_struct *power_wq;
-	struct work_struct resume_work;
-	struct work_struct suspend_work;
-
-	struct xiaomi_touch_interface xiaomi_touch;
-
-	struct workqueue_struct *gesture_wq;
-	struct delayed_work gesture_work;
-
-	bool nonui_enabled;
-	bool high_report_rate;
 };
 
 /* external module structures */
@@ -725,7 +690,7 @@ int goodix_fw_update_init(struct goodix_ts_core *core_data);
 void goodix_fw_update_uninit(void);
 int goodix_do_fw_update(struct goodix_ic_config *ic_config, int mode);
 
-int goodix_get_ic_type(struct device_node *node, const struct of_device_id *goodix_dt_ids);
+int goodix_get_ic_type(struct device_node *node);
 int gesture_module_init(void);
 void gesture_module_exit(void);
 int inspect_module_init(void);
